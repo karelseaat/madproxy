@@ -36,26 +36,12 @@ BLOCKED_WINDOW_ID = True
 
 
 def app(stdscr):
-    # Options
-    # curses.curs_set(0)
 
-    # Window Creation
-    # console_window = curses.newwin(curses.LINES - int(curses.LINES / 3), curses.COLS, 0, 0)
-    # keymap_window = curses.newwin(int(curses.LINES / 3), int(curses.COLS / 2), curses.LINES - int(curses.LINES / 3), 0)
-    # blocked_window = curses.newwin(int(curses.LINES / 3), int(curses.COLS / 2), curses.LINES - int(curses.LINES / 3), int(curses.COLS / 2))
-    focused_window = False # False for console, True for blocked urls
-    # details_window = curses.newwin(curses.LINES, curses.COLS, 0, 0)
+
     details_page = False
     selected_packet = 0
     selected_url = 0
 
-    # max_urls = int(curses.LINES / 3) - 2 # Max number of URLs that can be displayed on the screen at once
-    # block_min = 0
-    # block_max = len(blocked_urls) - 1 if len(blocked_urls) < max_urls else max_urls - 1
-
-    # max_requests = curses.LINES - int(curses.LINES / 3) - 2 # Max number of packets that can be displayed on the screen at once
-    # request_min = 0
-    # request_max = (len(requests) - 1) if (len(requests) < max_requests) else (max_requests - 1)
 
     while True:
 
@@ -95,6 +81,7 @@ class HTTPRequest:
 
         url = []
         self.https = False
+        self.connectit = True
 
         headers = {}
         for i in range(1, len(split_data)):
@@ -117,8 +104,12 @@ class HTTPRequest:
         self.headers = headers
         self.port = 443 if self.https else 80
 
+        if b"blaat" not in self.headers:
+            self.connectit = False
+        else:
+            del self.headers[b"blaat"]
 
-
+        print(self.headers)
 
         if b"Host" in self.headers:
             if b":" in self.headers[b"Host"]:
@@ -263,6 +254,10 @@ def handle_connection(data, conn):
         debug_print(f"[-] Received connection - parsing packet")
         # Parse HTTP packet
         http_request = HTTPRequest(data)
+
+        if not http_request.connectit:
+            return
+
         if http_request.https:
             tunnel(conn, http_request)
         else:
